@@ -9,7 +9,7 @@ pip install -r requirements.txt
 ## Run Server
 
 ```
-python app
+python app.py
 ```
 
 ## Requests

@@ -28,8 +28,7 @@ def authenticate(args):
     if(len(data)>0):
         if(str(data[0][2])==_password):
             return {'status':200,'UserId':str(data[0][0])}
-        else:
-            return {'status':100,'message':'Authentication failure'}
+    return {'status':100,'message':'Authentication failure'}
     
 class AuthenticateUser(Resource):
     def get(self):
@@ -76,7 +75,7 @@ class GetAllRows(Resource):
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
@@ -110,7 +109,7 @@ class GetXRandRows(Resource):
             parser.add_argument('tableName', type=str)
             parser.add_argument('numRows', type=int)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
@@ -144,7 +143,7 @@ class AddRow(Resource):
             parser.add_argument('argnames', type=str)
             parser.add_argument('argvals', type=str)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']
@@ -165,7 +164,7 @@ class AddMMRRow(Resource):
             parser.add_argument('argnames', type=str)
             parser.add_argument('argvals', type=str)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']
@@ -203,7 +202,7 @@ class UpdateRows(Resource):
             parser.add_argument('argvals', type=str)
             parser.add_argument('argids', type=str)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']
@@ -226,7 +225,7 @@ class UpdateMMR(Resource):
             parser.add_argument('argvals', type=str)
             parser.add_argument('argids', type=str)
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']
@@ -247,7 +246,7 @@ class CreateUser(Resource):
             parser.add_argument('email', type=str, help='Email address to create user')
             parser.add_argument('password', type=str, help='Password to create user')
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _userEmail = args['email']
@@ -293,7 +292,7 @@ class CreateTable(Resource):
             parser.add_argument('argnames', type=str, help='Names of Arguments')
             parser.add_argument('argtypes', type=str, help='Types of Arguments')
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']
@@ -314,7 +313,7 @@ class CreateMMRTable(Resource):
             parser.add_argument('argnames', type=str, help='Names of Arguments')
             parser.add_argument('argtypes', type=str, help='Types of Arguments')
             args = parser.parse_args()
-            if authenticate(args)['status'] == '100':
+            if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['name']

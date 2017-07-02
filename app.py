@@ -88,7 +88,7 @@ class GetAllRows(Resource):
 def getXRandRows(_tableName, _numRows):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.callproc('spGetXRandRows',(_tableName,_numRows))
+    cursor.callproc('spGetXRandRows',(_tableName,_numRows,))
     data = cursor.fetchall()
 
     row_list=[]
@@ -102,12 +102,12 @@ def getXRandRows(_tableName, _numRows):
     return {'StatusCode':'200','Items':row_list}
 
 class GetXRandRows(Resource):
-    def post(self):
+    def get(self):
         try: 
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
-            parser.add_argument('numRows', type=int)
+            parser.add_argument('numRows', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}

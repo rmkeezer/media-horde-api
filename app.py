@@ -2,9 +2,11 @@ from flask import Flask
 from flask_restful import Resource, Api
 from flask_restful import reqparse
 from flaskext.mysql import MySQL
+from flask_cors import CORS
 
 mysql = MySQL()
 app = Flask(__name__)
+CORS(app)
 
 # MySQL configurations
 app.config['MYSQL_DATABASE_USER'] = 'root'
@@ -55,13 +57,6 @@ def getRows(_tableName, _rows):
         cursor.callproc('spGetRows',(_tableName, _rows))
     data = cursor.fetchall()
 
-    row_list=[]
-    for row in data:
-        i = {
-            'row':row,
-        }
-        row_list.append(i)
-
     return {'StatusCode':'200','Items':data}
 
 def addAuthArgs(parser):
@@ -91,15 +86,7 @@ def getXRandRows(_tableName, _numRows):
     cursor.callproc('spGetXRandRows',(_tableName,_numRows,))
     data = cursor.fetchall()
 
-    row_list=[]
-    for row in data:
-        i = {
-            'Id':row[0],
-            'Item':row[1]
-        }
-        row_list.append(i)
-
-    return {'StatusCode':'200','Items':row_list}
+    return {'StatusCode':'200','Items':data}
 
 class GetXRandRows(Resource):
     def get(self):

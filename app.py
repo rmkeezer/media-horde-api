@@ -1,8 +1,13 @@
+from __future__ import print_function
+
 from flask import Flask
 from flask_restful import Resource, Api
 from flask_restful import reqparse
 from flaskext.mysql import MySQL
 from flask_cors import CORS
+import re, string
+
+import sys
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -19,6 +24,11 @@ mysql.init_app(app)
 api = Api(app)
 
 def authenticate(args):
+    pattern = re.compile('[^\w_]+')
+    for arg in args:
+        if arg != 'email' and arg != 'password':
+            args[arg] = pattern.sub('', args[arg])
+
     _username = args['email']
     _password = args['password']
 
@@ -48,20 +58,67 @@ class AuthenticateUser(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def getRows(_tableName, _rows):
+def getRows(_tableName, _numrows):
     conn = mysql.connect()
     cursor = conn.cursor()
-    if _rows == '*':
+    if _numrows == '*':
         cursor.callproc('spGetAllRows',(_tableName,))
     else:
-        cursor.callproc('spGetRows',(_tableName, _rows))
+        cursor.callproc('spGetRows',(_tableName, _numrows))
     data = cursor.fetchall()
+    
+    out = []
+    for item in data:
+        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
 
-    return {'StatusCode':'200','Items':data}
+    return {'StatusCode':'200','Items':out}
+
+def getRowsOrdered(_tableName, _numrows, _order, _dir):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.callproc('spGetRowsOrdered',(_tableName, _numrows, _order, _dir))
+    data = cursor.fetchall()
+    
+    out = []
+    for item in data:
+        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
+
+    return {'StatusCode':'200','Items':out}
+
+def getJoinedRowsOrdered(_table1, _table2, _numrows, _order, _dir):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _numrows, _order, _dir))
+    data = cursor.fetchall()
+    
+    out = []
+    for item in data:
+        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
+
+    return {'StatusCode':'200','Items':out}
 
 def addAuthArgs(parser):
     parser.add_argument('email', type=str, help='Email address for Authentication')
     parser.add_argument('password', type=str, help='Password for Authentication')
+
+class GetRows(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('tableName', type=str)
+            parser.add_argument('numRows', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+
+            _tableName = args['tableName']
+            _numRows = args['numRows']
+
+            return getRows(_tableName, _numRows)
+
+        except Exception as e:
+            return {'error': str(e)}
 
 class GetAllRows(Resource):
     def get(self):
@@ -80,13 +137,65 @@ class GetAllRows(Resource):
         except Exception as e:
             return {'error': str(e)}
 
+class GetRowsOrdered(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('tableName', type=str)
+            parser.add_argument('numRows', type=str)
+            parser.add_argument('order', type=str)
+            parser.add_argument('dir', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+
+            _tableName = args['tableName']
+            _numRows = args['numRows']
+            _order = args['order']
+            _dir = args['dir']
+
+            return getRowsOrdered(_tableName, _numRows, _order, _dir)
+
+        except Exception as e:
+            return {'error': str(e)}
+
+class GetJoinedRowsOrdered(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('table1', type=str)
+            parser.add_argument('table2', type=str)
+            parser.add_argument('numRows', type=str)
+            parser.add_argument('order', type=str)
+            parser.add_argument('dir', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+
+            _table1 = args['table1']
+            _table2 = args['table2']
+            _numRows = args['numRows']
+            _order = args['order']
+            _dir = args['dir']
+
+            return getJoinedRowsOrdered(_table1, _table2, _numRows, _order, _dir)
+
+        except Exception as e:
+            return {'error': str(e)}
+
 def getXRandRows(_tableName, _numRows):
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.callproc('spGetXRandRows',(_tableName,_numRows,))
     data = cursor.fetchall()
 
-    return {'StatusCode':'200','Items':data}
+    out = []
+    for item in data:
+        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
+
+    return {'StatusCode':'200','Items':out}
 
 class GetXRandRows(Resource):
     def get(self):
@@ -316,7 +425,10 @@ class CreateMMRTable(Resource):
 
 api.add_resource(CreateUser, '/CreateUser')
 api.add_resource(AuthenticateUser, '/AuthenticateUser')
+api.add_resource(GetRows, '/GetRows')
 api.add_resource(GetAllRows, '/GetAllRows')
+api.add_resource(GetRowsOrdered, '/GetRowsOrdered')
+api.add_resource(GetJoinedRowsOrdered, '/GetJoinedRowsOrdered')
 api.add_resource(GetXRandRows, '/GetXRandRows')
 api.add_resource(CreateTable, '/CreateTable')
 api.add_resource(CreateMMRTable, '/CreateMMRTable')

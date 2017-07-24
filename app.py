@@ -58,13 +58,21 @@ class AuthenticateUser(Resource):
         except Exception as e:
             return {'error': str(e)}
 
+<<<<<<< HEAD
 def getRows(_tableName, _offset, _numrows):
+=======
+def getRows(_tableName, _numrows):
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
     conn = mysql.connect()
     cursor = conn.cursor()
     if _numrows == '*':
         cursor.callproc('spGetAllRows',(_tableName,))
     else:
+<<<<<<< HEAD
         cursor.callproc('spGetRows',(_tableName, _offset, _numrows))
+=======
+        cursor.callproc('spGetRows',(_tableName, _numrows))
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
     data = cursor.fetchall()
     
     out = []
@@ -73,10 +81,17 @@ def getRows(_tableName, _offset, _numrows):
 
     return {'StatusCode':'200','Items':out}
 
+<<<<<<< HEAD
 def getRowsOrdered(_tableName, _offset, _numrows, _order, _dir):
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.callproc('spGetRowsOrdered',(_tableName, _offset, _numrows, _order, _dir))
+=======
+def getRowsOrdered(_tableName, _numrows, _order, _dir):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.callproc('spGetRowsOrdered',(_tableName, _numrows, _order, _dir))
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
     data = cursor.fetchall()
     
     out = []
@@ -85,10 +100,17 @@ def getRowsOrdered(_tableName, _offset, _numrows, _order, _dir):
 
     return {'StatusCode':'200','Items':out}
 
+<<<<<<< HEAD
 def getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir):
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir))
+=======
+def getJoinedRowsOrdered(_table1, _table2, _numrows, _order, _dir):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _numrows, _order, _dir))
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
     data = cursor.fetchall()
     
     out = []
@@ -107,17 +129,26 @@ class GetRows(Resource):
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
+<<<<<<< HEAD
             parser.add_argument('offset', type=str)
+=======
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
             parser.add_argument('numRows', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
+<<<<<<< HEAD
             _offset = args['offset']
             _numRows = args['numRows']
 
             return getRows(_tableName, _offset, _numRows)
+=======
+            _numRows = args['numRows']
+
+            return getRows(_tableName, _numRows)
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
 
         except Exception as e:
             return {'error': str(e)}
@@ -145,7 +176,10 @@ class GetRowsOrdered(Resource):
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
+<<<<<<< HEAD
             parser.add_argument('offset', type=str)
+=======
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
             parser.add_argument('numRows', type=str)
             parser.add_argument('order', type=str)
             parser.add_argument('dir', type=str)
@@ -154,12 +188,19 @@ class GetRowsOrdered(Resource):
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
+<<<<<<< HEAD
             _offset = args['numRows']
+=======
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']
 
+<<<<<<< HEAD
             return getRowsOrdered(_tableName, _offset, _numRows, _order, _dir)
+=======
+            return getRowsOrdered(_tableName, _numRows, _order, _dir)
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
 
         except Exception as e:
             return {'error': str(e)}
@@ -169,6 +210,7 @@ class GetJoinedRowsOrdered(Resource):
         try: 
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
+<<<<<<< HEAD
             parser.add_argument('table1', type=str)
             parser.add_argument('table2', type=str)
             parser.add_argument('join1', type=str)
@@ -177,6 +219,9 @@ class GetJoinedRowsOrdered(Resource):
             parser.add_argument('null', type=str)
             parser.add_argument('neg', type=str)
             parser.add_argument('offset', type=str)
+=======
+            parser.add_argument('tableName', type=str)
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
             parser.add_argument('numRows', type=str)
             parser.add_argument('order', type=str)
             parser.add_argument('dir', type=str)
@@ -184,6 +229,7 @@ class GetJoinedRowsOrdered(Resource):
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
+<<<<<<< HEAD
             _table1 = args['table1']
             _table2 = args['table2']
             _join1 = args['join1']
@@ -192,16 +238,27 @@ class GetJoinedRowsOrdered(Resource):
             _null = args['null']
             _neg = args['neg']
             _offset = args['offset']
+=======
+            _tableName = args['tableName']
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']
 
+<<<<<<< HEAD
             return getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numRows, _order, _dir)
+=======
+            return getRowsOrdered(_tableName, _numRows, _order, _dir)
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
 
         except Exception as e:
             return {'error': str(e)}
 
+<<<<<<< HEAD
 def getXRandRows(_tableName, _offset, _numRows):
+=======
+def getXRandRows(_tableName, _numRows):
+>>>>>>> 272546de0b6a78ab996099f53c5553f271c3590e
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.callproc('spGetXRandRows',(_tableName, _offset, _numRows,))

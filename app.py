@@ -161,6 +161,9 @@ class GetRowsOrdered(Resource):
 
             return getRowsOrdered(_tableName, _offset, _numRows, _order, _dir)
 
+        except Exception as e:
+            return {'error': str(e)}
+
 class GetJoinedRowsOrdered(Resource):
     def get(self):
         try: 

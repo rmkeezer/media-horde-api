@@ -154,7 +154,7 @@ class GetRowsOrdered(Resource):
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
-            _offset = args['numRows']
+            _offset = args['offset']
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']

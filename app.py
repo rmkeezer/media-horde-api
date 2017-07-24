@@ -58,13 +58,13 @@ class AuthenticateUser(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def getRows(_tableName, _numrows):
+def getRows(_tableName, _offset, _numrows):
     conn = mysql.connect()
     cursor = conn.cursor()
     if _numrows == '*':
         cursor.callproc('spGetAllRows',(_tableName,))
     else:
-        cursor.callproc('spGetRows',(_tableName, _numrows))
+        cursor.callproc('spGetRows',(_tableName, _offset, _numrows))
     data = cursor.fetchall()
     
     out = []
@@ -73,10 +73,10 @@ def getRows(_tableName, _numrows):
 
     return {'StatusCode':'200','Items':out}
 
-def getRowsOrdered(_tableName, _numrows, _order, _dir):
+def getRowsOrdered(_tableName, _offset, _numrows, _order, _dir):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.callproc('spGetRowsOrdered',(_tableName, _numrows, _order, _dir))
+    cursor.callproc('spGetRowsOrdered',(_tableName, _offset, _numrows, _order, _dir))
     data = cursor.fetchall()
     
     out = []
@@ -85,10 +85,10 @@ def getRowsOrdered(_tableName, _numrows, _order, _dir):
 
     return {'StatusCode':'200','Items':out}
 
-def getJoinedRowsOrdered(_table1, _table2, _numrows, _order, _dir):
+def getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _numrows, _order, _dir))
+    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir))
     data = cursor.fetchall()
     
     out = []
@@ -107,15 +107,17 @@ class GetRows(Resource):
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
+            parser.add_argument('offset', type=str)
             parser.add_argument('numRows', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
+            _offset = args['offset']
             _numRows = args['numRows']
 
-            return getRows(_tableName, _numRows)
+            return getRows(_tableName, _offset, _numRows)
 
         except Exception as e:
             return {'error': str(e)}
@@ -143,6 +145,7 @@ class GetRowsOrdered(Resource):
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
+            parser.add_argument('offset', type=str)
             parser.add_argument('numRows', type=str)
             parser.add_argument('order', type=str)
             parser.add_argument('dir', type=str)
@@ -151,11 +154,12 @@ class GetRowsOrdered(Resource):
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
+            _offset = args['numRows']
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']
 
-            return getRowsOrdered(_tableName, _numRows, _order, _dir)
+            return getRowsOrdered(_tableName, _offset, _numRows, _order, _dir)
 
         except Exception as e:
             return {'error': str(e)}
@@ -167,6 +171,12 @@ class GetJoinedRowsOrdered(Resource):
             addAuthArgs(parser)
             parser.add_argument('table1', type=str)
             parser.add_argument('table2', type=str)
+            parser.add_argument('join1', type=str)
+            parser.add_argument('join2', type=str)
+            parser.add_argument('joinType', type=str)
+            parser.add_argument('null', type=str)
+            parser.add_argument('neg', type=str)
+            parser.add_argument('offset', type=str)
             parser.add_argument('numRows', type=str)
             parser.add_argument('order', type=str)
             parser.add_argument('dir', type=str)
@@ -176,19 +186,25 @@ class GetJoinedRowsOrdered(Resource):
 
             _table1 = args['table1']
             _table2 = args['table2']
+            _join1 = args['join1']
+            _join2 = args['join2']
+            _joinType = args['joinType']
+            _null = args['null']
+            _neg = args['neg']
+            _offset = args['offset']
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']
 
-            return getJoinedRowsOrdered(_table1, _table2, _numRows, _order, _dir)
+            return getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numRows, _order, _dir)
 
         except Exception as e:
             return {'error': str(e)}
 
-def getXRandRows(_tableName, _numRows):
+def getXRandRows(_tableName, _offset, _numRows):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.callproc('spGetXRandRows',(_tableName,_numRows,))
+    cursor.callproc('spGetXRandRows',(_tableName, _offset, _numRows,))
     data = cursor.fetchall()
 
     out = []
@@ -203,15 +219,17 @@ class GetXRandRows(Resource):
             parser = reqparse.RequestParser()
             addAuthArgs(parser)
             parser.add_argument('tableName', type=str)
+            parser.add_argument('offset', type=str)
             parser.add_argument('numRows', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
 
             _tableName = args['tableName']
+            _offset = args['offset']
             _numRows = args['numRows']
 
-            return getXRandRows(_tableName, _numRows)
+            return getXRandRows(_tableName, _offset, _numRows)
 
         except Exception as e:
             return {'error': str(e)}

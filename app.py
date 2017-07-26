@@ -3,13 +3,14 @@ from __future__ import print_function
 from flask import Flask
 from flask_restful import Resource, Api
 from flask_restful import reqparse
-from flaskext.mysql import MySQL
 from flask_cors import CORS
+from dblayer import init, authenticate, getRows, getRowsOrdered,\
+    getJoinedRowsOrdered, getXRandRows, addRow, updateRows, createTable,\
+    removeRow
 import re, string
 
 import sys
 
-mysql = MySQL()
 app = Flask(__name__)
 CORS(app)
 
@@ -19,83 +20,9 @@ app.config['MYSQL_DATABASE_PASSWORD'] = 'smoothie42' # THIS IS TEMPORARY
 app.config['MYSQL_DATABASE_DB'] = 'mediahorde'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
-mysql.init_app(app)
+init(app)
 
 api = Api(app)
-
-def authenticate(args):
-    pattern = re.compile('[^\w_]+')
-    for arg in args:
-        if arg != 'email' and arg != 'password':
-            args[arg] = pattern.sub('', args[arg])
-
-    _username = args['email']
-    _password = args['password']
-
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spAuthenticateUser',(_username,))
-    data = cursor.fetchall()
-
-    if(len(data)>0):
-        if(str(data[0][2])==_password):
-            return {'status':200,'UserId':str(data[0][0])}
-    return {'status':100,'message':'Authentication failure'}
-    
-class AuthenticateUser(Resource):
-    def get(self):
-        try:
-            parser = reqparse.RequestParser()
-            parser.add_argument('email', type=str, help='Email address for Authentication')
-            parser.add_argument('password', type=str, help='Password for Authentication')
-            args = parser.parse_args()
-
-            _userEmail = args['email']
-            _userPassword = args['password']
-
-            return authenticate(_userEmail, _userPassword)
-
-        except Exception as e:
-            return {'error': str(e)}
-
-def getRows(_tableName, _offset, _numrows):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    if _numrows == '*':
-        cursor.callproc('spGetAllRows',(_tableName,))
-    else:
-        cursor.callproc('spGetRows',(_tableName, _offset, _numrows))
-    data = cursor.fetchall()
-    
-    out = []
-    for item in data:
-        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
-
-    return {'StatusCode':'200','Items':out}
-
-def getRowsOrdered(_tableName, _offset, _numrows, _order, _dir):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spGetRowsOrdered',(_tableName, _offset, _numrows, _order, _dir))
-    data = cursor.fetchall()
-    
-    out = []
-    for item in data:
-        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
-
-    return {'StatusCode':'200','Items':out}
-
-def getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir))
-    data = cursor.fetchall()
-    
-    out = []
-    for item in data:
-        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
-
-    return {'StatusCode':'200','Items':out}
 
 def addAuthArgs(parser):
     parser.add_argument('email', type=str, help='Email address for Authentication')
@@ -201,17 +128,7 @@ class GetJoinedRowsOrdered(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def getXRandRows(_tableName, _offset, _numRows):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spGetXRandRows',(_tableName, _offset, _numRows,))
-    data = cursor.fetchall()
 
-    out = []
-    for item in data:
-        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
-
-    return {'StatusCode':'200','Items':out}
 
 class GetXRandRows(Resource):
     def get(self):
@@ -234,19 +151,7 @@ class GetXRandRows(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def addRow(_tableName, _argNames, _argVals):
-    _argVals = ','.join([x if x.isdigit() else "'" + x + "'" for x in _argVals.split(',')])
 
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spAddRow',(_tableName,_argNames,_argVals))
-    data = cursor.fetchall()
-
-    if len(data) is 0:
-        conn.commit()
-        return {'StatusCode':'200','Message': 'Row addition success'}
-    else:
-        return {'StatusCode':'1000','Message': str(data[0])}
 
 class AddRow(Resource):
     def post(self):
@@ -290,21 +195,7 @@ class AddMMRRow(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def updateRows(_tableName, _argNames, _argVals, _argIds):
-    _argVals = [x if x.isdigit() else "'" + x + "'" for x in _argVals.split(',')]
-    _argChanges = ','.join([a + "=" + b for a,b in zip(_argNames.split(','), _argVals)])
 
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    print(_argChanges)
-    cursor.callproc('spUpdateRows',(_tableName,_argChanges,_argIds))
-    data = cursor.fetchall()
-
-    if len(data) is 0:
-        conn.commit()
-        return {'StatusCode':'200','Message': 'Row update success'}
-    else:
-        return {'StatusCode':'1000','Message': str(data[0])}
 
 class UpdateRows(Resource):
     def post(self):
@@ -314,7 +205,8 @@ class UpdateRows(Resource):
             parser.add_argument('name', type=str)
             parser.add_argument('argnames', type=str)
             parser.add_argument('argvals', type=str)
-            parser.add_argument('argids', type=str)
+            parser.add_argument('idname', type=str)
+            parser.add_argument('idval', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
@@ -322,9 +214,31 @@ class UpdateRows(Resource):
             _tableName = args['name']
             _argNames = args['argnames']
             _argVals = args['argvals']
-            _argIds = args['argids']
+            _idName = args['idname']
+            _idVal = args['idval']
 
-            return updateRows(_tableName, _argNames, _argVals, _argIds)
+            return updateRows(_tableName, _argNames, _argVals, _idName, _idVal)
+
+        except Exception as e:
+            return {'error': str(e)}
+
+class RemoveRow(Resource):
+    def post(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('name', type=str)
+            parser.add_argument('argnames', type=str)
+            parser.add_argument('argvals', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+
+            _tableName = args['name']
+            _argNames = args['argnames']
+            _argVals = args['argvals']
+
+            return removeRow(_tableName, _argNames, _argVals)
 
         except Exception as e:
             return {'error': str(e)}
@@ -337,7 +251,8 @@ class UpdateMMR(Resource):
             parser.add_argument('name', type=str)
             parser.add_argument('argnames', type=str)
             parser.add_argument('argvals', type=str)
-            parser.add_argument('argids', type=str)
+            parser.add_argument('idname', type=str)
+            parser.add_argument('idval', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
@@ -345,9 +260,10 @@ class UpdateMMR(Resource):
             _tableName = args['name']
             _argNames = args['argnames']
             _argVals = args['argvals']
-            _argIds = args['argids']
+            _idName = args['idname']
+            _idVal = args['idval']
 
-            return updateRows(_tableName, _argNames, _argVals, _argIds)
+            return updateRows(_tableName, _argNames, _argVals, _idName, _idVal)
 
         except Exception as e:
             return {'error': str(e)}
@@ -380,22 +296,7 @@ class CreateUser(Resource):
         except Exception as e:
             return {'error': str(e)}
 
-def createTable(_tableName, _argNames, _argTypes):
-    if len(_argNames) != len(_argTypes):
-        return {'error': 'Name type mismatch'}
-    
-    _args = ['`' + a + '` ' + b + ',' for a, b in zip(_argNames, _argTypes)]
 
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.callproc('spCreateTable',(_tableName,''.join(_args)))
-    data = cursor.fetchall()
-
-    if len(data) is 0:
-        conn.commit()
-        return {'StatusCode':'200','Message': 'Table creation success'}
-    else:
-        return {'StatusCode':'1000','Message': str(data[0])}
 
 class CreateTable(Resource):
     def post(self):
@@ -442,7 +343,6 @@ class CreateMMRTable(Resource):
 
 
 api.add_resource(CreateUser, '/CreateUser')
-api.add_resource(AuthenticateUser, '/AuthenticateUser')
 api.add_resource(GetRows, '/GetRows')
 api.add_resource(GetAllRows, '/GetAllRows')
 api.add_resource(GetRowsOrdered, '/GetRowsOrdered')
@@ -453,6 +353,7 @@ api.add_resource(CreateMMRTable, '/CreateMMRTable')
 api.add_resource(AddRow, '/AddRow')
 api.add_resource(AddMMRRow, '/AddMMRRow')
 api.add_resource(UpdateRows, '/UpdateRows')
+api.add_resource(RemoveRow, '/RemoveRow')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')

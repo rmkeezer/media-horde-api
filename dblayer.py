@@ -55,10 +55,17 @@ def getRowsOrdered(_tableName, _offset, _numrows, _order, _dir):
 
     return {'StatusCode':'200','Items':out}
 
-def getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir):
+def getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _whereNames, _whereVals, _offset, _numrows, _order, _dir):
+    _whereVals = [x if x.isdigit() else "'" + x + "'" for x in _whereVals.split('z')]
+    _where = ' AND '.join([a + "=" + b for a,b in zip(_whereNames.split('z'), _whereVals)])
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numrows, _order, _dir))
+    _hasWhere = ''
+    if _where != '=\'\'':
+        _hasWhere = ' AND '
+    else:
+        _where = ''
+    cursor.callproc('spGetJoinedRowsOrdered',(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _hasWhere, _where, _offset, _numrows, _order, _dir))
     data = cursor.fetchall()
     
     out = []
@@ -95,8 +102,8 @@ def addRow(_tableName, _argNames, _argVals):
         return {'StatusCode':'1000','Message': str(data[0])}
 
 def updateRows(_tableName, _argNames, _argVals, _idName, _idVal):
-    _argVals = [x if x.isdigit() else "'" + x + "'" for x in _argVals.split(',')]
-    _argChanges = ' AND '.join([a + "=" + b for a,b in zip(_argNames.split(','), _argVals)])
+    _argVals = [x if x.isdigit() else "'" + x + "'" for x in _argVals.split('z')]
+    _argChanges = ' AND '.join([a + "=" + b for a,b in zip(_argNames.split('z'), _argVals)])
 
     conn = mysql.connect()
     cursor = conn.cursor()
@@ -142,3 +149,56 @@ def createTable(_tableName, _argNames, _argTypes):
         return {'StatusCode':'200','Message': 'Table creation success'}
     else:
         return {'StatusCode':'1000','Message': str(data[0])}
+
+def addGame(userId, gameId):
+    conn = mysql.connect()
+    c = conn.cursor()
+    c.execute('REPLACE INTO usergames(user_id, game_id, position) VALUES(%s,%s,%s)' % (userId, gameId, '1'))
+    conn.commit()
+    return {'StatusCode':'200','Message': 'Row addition success'}
+
+def removeGame(userId, gameId):
+    conn = mysql.connect()
+    c = conn.cursor()
+    c.execute('DELETE FROM usergames WHERE user_id=%s AND game_id=%s' % (userId, gameId))
+    conn.commit()
+    return {'StatusCode':'200','Message': 'Row deletion success'}
+
+def getGamesHelper(args, joinType, notNull, getType='join'):
+    if args['whereNames'] != '':
+        _whereVals = [x if x.isdigit() else "'" + x + "'" for x in args['whereVals'].split('z')]
+        _where = ' AND '.join([a + "=" + b for a,b in zip(args['whereNames'].split('z'), _whereVals)])
+        _where = 'AND ' + _where
+    else:
+        _where = ''
+    conn = mysql.connect()
+    c = conn.cursor()
+    if getType == 'rand':
+        c.execute('SELECT * FROM games ' +\
+            _where + ''' AS r1 JOIN
+            (SELECT CEIL(RAND() * (SELECT MAX(id) FROM games)) AS id) AS r2 WHERE r1.id >= r2.id ORDER BY r1.id ASC 
+            LIMIT ''' + args['numRows'])
+    elif getType == 'all':
+        c.execute('SELECT * FROM games ' +\
+            _where + ' ORDER BY ' + args['order'] + ' ' + args['dir'] + ' LIMIT ' + args['numRows'] + ' OFFSET ' + args['offset'])
+    else:
+        c.execute('SELECT * FROM usergames ' + joinType + ' JOIN games ON usergames.game_id = games.Id WHERE user_id IS ' + notNull + ' NULL ' +\
+            _where + ' ORDER BY ' + args['order'] + ' ' + args['dir'] + ' LIMIT ' + args['numRows'] + ' OFFSET ' + args['offset'])
+    data = c.fetchall()
+    
+    out = []
+    for item in data:
+        out.append([i.decode('utf-8') if type(i) == bytes else i for i in item])
+    return {'StatusCode':'200','Items':out}
+
+def getOtherGames(args):
+    return getGamesHelper(args, 'RIGHT', '')
+
+def getMyGames(args):
+    return getGamesHelper(args, 'INNER', 'NOT')
+
+def getAllGames(args):
+    return getGamesHelper(args, '', '', getType='all')
+
+def getRandGames(args):
+    return getGamesHelper(args, '', '', getType='rand')

@@ -7,6 +7,8 @@ from flask_cors import CORS
 from dblayer import init, authenticate, getRows, getRowsOrdered,\
     getJoinedRowsOrdered, getXRandRows, addRow, updateRows, createTable,\
     removeRow
+from dblayer import addGame, removeGame, getOtherGames, getMyGames,\
+    getAllGames, getRandGames
 import re, string
 
 import sys
@@ -103,6 +105,8 @@ class GetJoinedRowsOrdered(Resource):
             parser.add_argument('joinType', type=str)
             parser.add_argument('null', type=str)
             parser.add_argument('neg', type=str)
+            parser.add_argument('whereNames', type=str)
+            parser.add_argument('whereVals', type=str)
             parser.add_argument('offset', type=str)
             parser.add_argument('numRows', type=str)
             parser.add_argument('order', type=str)
@@ -118,12 +122,14 @@ class GetJoinedRowsOrdered(Resource):
             _joinType = args['joinType']
             _null = args['null']
             _neg = args['neg']
+            _whereNames = args['whereNames']
+            _whereVals = args['whereVals']
             _offset = args['offset']
             _numRows = args['numRows']
             _order = args['order']
             _dir = args['dir']
 
-            return getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _offset, _numRows, _order, _dir)
+            return getJoinedRowsOrdered(_table1, _table2, _join1, _join2, _joinType, _null, _neg, _whereNames, _whereVals, _offset, _numRows, _order, _dir)
 
         except Exception as e:
             return {'error': str(e)}
@@ -354,6 +360,120 @@ api.add_resource(AddRow, '/AddRow')
 api.add_resource(AddMMRRow, '/AddMMRRow')
 api.add_resource(UpdateRows, '/UpdateRows')
 api.add_resource(RemoveRow, '/RemoveRow')
+
+class AddGame(Resource):
+    def post(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('userId', type=str)
+            parser.add_argument('gameId', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            return addGame(args['userId'], args['gameId'])
+        except Exception as e:
+            return {'error': str(e)}
+
+class RemoveGame(Resource):
+    def post(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('userId', type=str)
+            parser.add_argument('gameId', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            return removeGame(args['userId'], args['gameId'])
+        except Exception as e:
+            return {'error': str(e)}
+
+class GetOtherGames(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('whereNames', type=str)
+            parser.add_argument('whereVals', type=str)
+            parser.add_argument('offset', type=str)
+            parser.add_argument('numRows', type=str)
+            parser.add_argument('order', type=str)
+            parser.add_argument('dir', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            del args['email']
+            del args['password']
+            return getOtherGames(args)
+        except Exception as e:
+            return {'error': str(e)}
+
+class GetMyGames(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('whereNames', type=str)
+            parser.add_argument('whereVals', type=str)
+            parser.add_argument('offset', type=str)
+            parser.add_argument('numRows', type=str)
+            parser.add_argument('order', type=str)
+            parser.add_argument('dir', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            del args['email']
+            del args['password']
+            return getMyGames(args)
+        except Exception as e:
+            return {'error': str(e)}
+
+class GetAllGames(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('whereNames', type=str)
+            parser.add_argument('whereVals', type=str)
+            parser.add_argument('offset', type=str)
+            parser.add_argument('numRows', type=str)
+            parser.add_argument('order', type=str)
+            parser.add_argument('dir', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            del args['email']
+            del args['password']
+            out = getAllGames(args)
+            return out
+        except Exception as e:
+            return {'error': str(e)}
+
+class GetRandGames(Resource):
+    def get(self):
+        try: 
+            parser = reqparse.RequestParser()
+            addAuthArgs(parser)
+            parser.add_argument('whereNames', type=str)
+            parser.add_argument('whereVals', type=str)
+            parser.add_argument('numRows', type=str)
+            args = parser.parse_args()
+            if authenticate(args)['status'] == 100:
+                return {'error': 'Authentication Failed'}
+            del args['email']
+            del args['password']
+            out = getRandGames(args)
+            return out
+        except Exception as e:
+            return {'error': str(e)}
+
+api.add_resource(AddGame, '/AddGame')
+api.add_resource(RemoveGame, '/RemoveGame')
+api.add_resource(GetOtherGames, '/GetOtherGames')
+api.add_resource(GetMyGames, '/GetMyGames')
+api.add_resource(GetAllGames, '/GetAllGames')
+api.add_resource(GetRandGames, '/GetRandGames')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')

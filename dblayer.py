@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 from flaskext.mysql import MySQL
 import re, string
 
@@ -107,7 +107,6 @@ def updateRows(_tableName, _argNames, _argVals, _idName, _idVal):
 
     conn = mysql.connect()
     cursor = conn.cursor()
-    print(_argChanges, file=sys.stdout)
     cursor.callproc('spUpdateRows',(_tableName,_argChanges,_idName,_idVal))
     data = cursor.fetchall()
 
@@ -150,17 +149,40 @@ def createTable(_tableName, _argNames, _argTypes):
     else:
         return {'StatusCode':'1000','Message': str(data[0])}
 
-def addGame(userId, gameId):
+def addGame(userId, gameId, bumpId):
     conn = mysql.connect()
     c = conn.cursor()
-    c.execute('REPLACE INTO usergames(user_id, game_id, position) VALUES(%s,%s,%s)' % (userId, gameId, '1'))
+    if bumpId:
+        c.execute('SELECT position FROM usergamesorder WHERE user_id=%s AND games_id=%s' % (userId, bumpId))
+        result = c.fetchall()
+    else:
+        result = None
+    if result:
+        pos = result[0][0]
+    else:
+        c.execute('SELECT count(*) FROM usergamesorder WHERE user_id=%s' % (userId))
+        result = c.fetchall()
+        pos = result[0][0]
+    c.execute('SELECT position FROM usergamesorder WHERE user_id=%s AND games_id=%s' % (userId, gameId))
+    result = c.fetchall()
+    if result:
+        c.execute('UPDATE usergamesorder SET position = position - 1 WHERE position >= %s ORDER BY position ASC' % result[0])
+        conn.commit()
+    c.execute('UPDATE usergamesorder SET position = position + 1 WHERE position >= %s ORDER BY position DESC' % (pos,))
+    conn.commit()
+    c.execute('REPLACE INTO usergamesorder(user_id, games_id, position) VALUES(%s,%s,%s)' % (userId, gameId, pos))
     conn.commit()
     return {'StatusCode':'200','Message': 'Row addition success'}
 
 def removeGame(userId, gameId):
     conn = mysql.connect()
     c = conn.cursor()
-    c.execute('DELETE FROM usergames WHERE user_id=%s AND game_id=%s' % (userId, gameId))
+    c.execute('SELECT position FROM usergamesorder WHERE user_id=%s AND games_id=%s' % (userId, gameId))
+    result = c.fetchall()
+    pos = result[0][0]
+    c.execute('DELETE FROM usergamesorder WHERE user_id=%s AND games_id=%s' % (userId, gameId))
+    conn.commit()
+    c.execute('UPDATE usergamesorder SET position = position - 1 WHERE position >= %s ORDER BY position ASC' % (pos,))
     conn.commit()
     return {'StatusCode':'200','Message': 'Row deletion success'}
 

@@ -368,10 +368,11 @@ class AddGame(Resource):
             addAuthArgs(parser)
             parser.add_argument('userId', type=str)
             parser.add_argument('gameId', type=str)
+            parser.add_argument('bumpId', type=str)
             args = parser.parse_args()
             if authenticate(args)['status'] == 100:
                 return {'error': 'Authentication Failed'}
-            return addGame(args['userId'], args['gameId'])
+            return addGame(args['userId'], args['gameId'], args['bumpId'])
         except Exception as e:
             return {'error': str(e)}
 

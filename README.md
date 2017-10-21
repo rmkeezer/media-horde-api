@@ -18,20 +18,24 @@ All requests return a JSON object
 
 ### /AddGame
 
-Create a new User
+Add a game to user's list of games
 
 ### /RemoveGame
 
-Create a new Table
+Remove a game from the user's list of games
 
 ### /GetOtherGames
 
-Add row to a Table
+Get games not in the user's list
 
 ### /GetMyGames
 
-Get all rows from a Table
+Get the user's list of games
 
 ### /GetAllGames
 
+Get all the games
+
 ### /GetRandGames
+
+Get a random set of games

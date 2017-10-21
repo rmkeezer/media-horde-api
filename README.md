@@ -16,18 +16,22 @@ python app.py
 
 All requests return a JSON object
 
-### Create User
+### /AddGame
 
 Create a new User
 
-### Create Table
+### /RemoveGame
 
 Create a new Table
 
-### Add Row
+### /GetOtherGames
 
 Add row to a Table
 
-### Get All Rows
+### /GetMyGames
 
 Get all rows from a Table
+
+### /GetAllGames
+
+### /GetRandGames
